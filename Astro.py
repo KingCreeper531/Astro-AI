@@ -1,56 +1,59 @@
-from flask import Flask, render_template_string, request
+from flask import Flask, render_template, request, jsonify
 import google.generativeai as genai
-import os
+import os, uuid, datetime
 
 app = Flask(__name__)
-
-# ✅ Load Gemini API key from environment
-genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-
-# ✅ Load Gemini 2.0 Flash model
-model = genai.GenerativeModel("gemini-2.0-flash")
-chat = model.start_chat()
-
-# ✅ Chat history storage
 chat_history = []
+session_id = str(uuid.uuid4())  # Unique session ID
 
-# ✅ Load HTML template with embedded CSS
-with open("Astro.html", "r") as f:
-    html_template = f.read()
+# Configure Gemini API
+genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
+model = genai.GenerativeModel("gemini-pro")
+chat = model.start_chat(history=[])
 
-# ✅ Streaming Gemini response
-def ask_gemini(prompt):
-    try:
-        stream = chat.send_message(prompt, stream=True)
-        response_text = ""
-        for chunk in stream:
-            response_text += chunk.text
-        return response_text
-    except Exception as e:
-        return f"Error: {e}"
-
-# ✅ Flask route with chat history and clear button
-@app.route("/", methods=["GET", "POST"])
+@app.route("/")
 def index():
-    global chat_history
-    if request.method == "POST":
-        if request.form.get("clear_chat"):
-            chat_history = []
-        else:
-            user_input = request.form.get("user_input")
-            if user_input:
-                response_text = ask_gemini(user_input)
-                chat_history.append(("You", user_input))
-                chat_history.append(("Astro", response_text))
+    return render_template("Astro.html")
 
-    # Build chat history HTML
-    history_html = "<div class='chat-history'>"
-    for speaker, text in chat_history:
-        history_html += f"<p><strong>{speaker}:</strong> {text}</p>"
-    history_html += "</div>"
+@app.route("/ask", methods=["POST"])
+def ask():
+    user_input = request.json["message"]
+    chat_history.append({"role": "user", "text": user_input})
 
-    rendered_page = html_template.replace("{{ history }}", history_html)
-    return render_template_string(rendered_page)
+    try:
+        response = chat.send_message(user_input, stream=True)
+        full_response = ""
 
+        for chunk in response:
+            if chunk.text:
+                full_response += chunk.text
+
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        chat_history.append({
+            "role": "model",
+            "text": full_response,
+            "timestamp": timestamp
+        })
+
+        return jsonify({
+            "response": full_response,
+            "timestamp": timestamp,
+            "session": session_id
+        })
+
+    except Exception as e:
+        return jsonify({
+            "response": "Oops! Astro AI encountered an error.",
+            "error": str(e),
+            "session": session_id
+        }), 500
+
+@app.route("/clear", methods=["POST"])
+def clear():
+    chat_history.clear()
+    return jsonify({"status": "cleared", "session": session_id})
+
+# Bind to 0.0.0.0 and dynamic port for Render
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
