@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Astro AI</title>
+  <style>
+    body {
+      background: radial-gradient(circle at top, #0f2027, #203a43, #2c5364);
+      color: #ffffff;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 40px;
+      max-width: 800px;
+      margin: auto;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 3em;
+      margin-bottom: 20px;
+      color: #00ffff;
+      text-shadow: 0 0 10px #00ffff;
+    }
+
+    form {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    input[type="text"] {
+      flex: 1 1 60%;
+      padding: 12px;
+      font-size: 1em;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+      min-width: 200px;
+    }
+
+    button {
+      padding: 12px 20px;
+      font-size: 1em;
+      background-color: #00ffff;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #00cccc;
+    }
+
+    .chat-history {
+      background-color: rgba(255, 255, 255, 0.05);
+      padding: 20px;
+      border-radius: 10px;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    .chat-history p {
+      margin: 10px 0;
+      line-height: 1.5;
+    }
+
+    .chat-history strong {
+      color: #00ffff;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body>
+  <h1>Astro AI</h1>
+  <form method="POST">
+    <div class="button-group">
+      <input type="text" name="user_input" placeholder="Ask me anything..." required>
+      <button type="submit">Go</button>
+      <button type="submit" name="clear_chat" value="true">Clear Chat</button>
+    </div>
+  </form>
+  {{ history }}
+</body>
+</html>
