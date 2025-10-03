@@ -1,10 +1,11 @@
-from flask import Flask, render_template_string, request, redirect
+from flask import Flask, render_template_string, request
 import google.generativeai as genai
+import os
 
 app = Flask(__name__)
 
-# ✅ Configure Gemini SDK
-genai.configure(api_key="AIzaSyArms8j1J8tlx9ZT4WjX11HnMvR38wflNQ")
+# ✅ Load Gemini API key from environment
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 # ✅ Load Gemini 2.0 Flash model
 model = genai.GenerativeModel("gemini-2.0-flash")
@@ -13,7 +14,7 @@ chat = model.start_chat()
 # ✅ Chat history storage
 chat_history = []
 
-# ✅ Load HTML (CSS is embedded)
+# ✅ Load HTML template with embedded CSS
 with open("Astro.html", "r") as f:
     html_template = f.read()
 
@@ -28,18 +29,19 @@ def ask_gemini(prompt):
     except Exception as e:
         return f"Error: {e}"
 
-# ✅ Main route
+# ✅ Flask route with chat history and clear button
 @app.route("/", methods=["GET", "POST"])
 def index():
     global chat_history
     if request.method == "POST":
-        user_input = request.form.get("user_input")
-        if user_input:
-            response_text = ask_gemini(user_input)
-            chat_history.append(("You", user_input))
-            chat_history.append(("Astro", response_text))
-        elif request.form.get("clear_chat"):
+        if request.form.get("clear_chat"):
             chat_history = []
+        else:
+            user_input = request.form.get("user_input")
+            if user_input:
+                response_text = ask_gemini(user_input)
+                chat_history.append(("You", user_input))
+                chat_history.append(("Astro", response_text))
 
     # Build chat history HTML
     history_html = "<div class='chat-history'>"
