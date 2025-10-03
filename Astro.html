@@ -1,94 +1,148 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Astro AI</title>
   <style>
     body {
-      background: radial-gradient(circle at top, #0f2027, #203a43, #2c5364);
-      color: #ffffff;
+      background: radial-gradient(circle at top, #0b0c2a, #000);
+      color: #fff;
       font-family: 'Segoe UI', sans-serif;
-      padding: 40px;
-      max-width: 800px;
-      margin: auto;
+      padding: 20px;
+      text-align: center;
     }
 
     h1 {
-      text-align: center;
-      font-size: 3em;
-      margin-bottom: 20px;
+      font-size: 2.5em;
+      margin-bottom: 10px;
       color: #00ffff;
-      text-shadow: 0 0 10px #00ffff;
     }
 
-    form {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-      justify-content: center;
+    #chat-box {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      padding: 15px;
+      max-width: 600px;
+      margin: 0 auto 20px;
+      text-align: left;
+      overflow-y: auto;
+      max-height: 400px;
     }
 
-    input[type="text"] {
-      flex: 1 1 60%;
-      padding: 12px;
-      font-size: 1em;
-      border-radius: 8px;
+    .user, .bot {
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 6px;
+    }
+
+    .user {
+      background-color: #1e1f3b;
+      color: #00ffff;
+    }
+
+    .bot {
+      background-color: #2a2b4d;
+      color: #fff;
+    }
+
+    #user-input {
+      width: 60%;
+      padding: 10px;
+      border-radius: 5px;
       border: none;
-      outline: none;
-      min-width: 200px;
+      font-size: 1em;
     }
 
     button {
-      padding: 12px 20px;
-      font-size: 1em;
+      padding: 10px 15px;
+      margin: 10px;
+      border: none;
+      border-radius: 5px;
       background-color: #00ffff;
       color: #000;
-      border: none;
-      border-radius: 8px;
+      font-weight: bold;
       cursor: pointer;
-      transition: background-color 0.3s ease;
     }
 
-    button:hover {
-      background-color: #00cccc;
+    #typing-indicator {
+      margin-top: 10px;
+      text-align: left;
+      font-size: 18px;
+      color: #ccc;
+      display: none;
     }
 
-    .chat-history {
-      background-color: rgba(255, 255, 255, 0.05);
-      padding: 20px;
-      border-radius: 10px;
-      max-height: 500px;
-      overflow-y: auto;
+    .dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      margin: 0 2px;
+      background-color: #ccc;
+      border-radius: 50%;
+      animation: blink 1.4s infinite ease-in-out;
     }
 
-    .chat-history p {
-      margin: 10px 0;
-      line-height: 1.5;
-    }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
 
-    .chat-history strong {
-      color: #00ffff;
-    }
-
-    .button-group {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      margin-bottom: 30px;
-      flex-wrap: wrap;
+    @keyframes blink {
+      0%, 80%, 100% { opacity: 0; }
+      40% { opacity: 1; }
     }
   </style>
 </head>
 <body>
-  <h1>Astro AI</h1>
-  <form method="POST">
-    <div class="button-group">
-      <input type="text" name="user_input" placeholder="Ask me anything..." required>
-      <button type="submit">Go</button>
-      <button type="submit" name="clear_chat" value="true">Clear Chat</button>
-    </div>
-  </form>
-  {{ history }}
+  <h1>🚀 Astro AI</h1>
+  <div id="chat-box"></div>
+
+  <div id="typing-indicator">
+    <span class="dot"></span>
+    <span class="dot"></span>
+    <span class="dot"></span>
+  </div>
+
+  <input type="text" id="user-input" placeholder="Ask Astro something..." />
+  <br />
+  <button onclick="sendMessage()">Send</button>
+  <button onclick="clearChat()">Clear</button>
+
+  <script>
+    function sendMessage() {
+      const input = document.getElementById("user-input");
+      const message = input.value.trim();
+      if (!message) return;
+
+      const chatBox = document.getElementById("chat-box");
+      chatBox.innerHTML += `<div class="user">You: ${message}</div>`;
+      input.value = "";
+
+      document.getElementById("typing-indicator").style.display = "block";
+
+      fetch("/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message })
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("typing-indicator").style.display = "none";
+        chatBox.innerHTML += `<div class="bot">Astro: ${data.response}</div>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+      })
+      .catch(err => {
+        document.getElementById("typing-indicator").style.display = "none";
+        chatBox.innerHTML += `<div class="bot">Astro: Something went wrong.</div>`;
+      });
+    }
+
+    function clearChat() {
+      fetch("/clear", { method: "POST" })
+      .then(() => {
+        document.getElementById("chat-box").innerHTML = "";
+      });
+    }
+  </script>
 </body>
 </html>
+
